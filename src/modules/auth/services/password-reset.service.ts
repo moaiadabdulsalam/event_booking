@@ -10,11 +10,12 @@ import {
   PASSWORD_SERVICE,
   REFRESH_TOKEN_SERVICE,
 } from '../../../common/constants/injection-tokens';
-import type{ IOtpService } from '../interfaces/otp-service.interface';
+import type { IOtpService } from '../interfaces/otp-service.interface';
 import type { IPasswordResetService } from '../interfaces/password-reset-service.interface';
 import type { IPasswordService } from '../interfaces/password-service.interface';
 import type { IRefreshTokenService } from '../interfaces/refresh-token-service.interface';
 import { UserService } from '../../user/services/user.service';
+import type { IMailService } from '../interfaces/mail-service.interface';
 
 @Injectable()
 export class PasswordResetService implements IPasswordResetService {
@@ -29,9 +30,12 @@ export class PasswordResetService implements IPasswordResetService {
 
     @Inject(REFRESH_TOKEN_SERVICE)
     private readonly refreshTokenService: IRefreshTokenService,
+
+    @Inject('MAIL_SERVICE')
+    private readonly mailService: IMailService,
   ) {}
 
-  async requestReset(email: string): Promise<{ message: string; code: string }> {
+  async requestReset(email: string): Promise<{ message: string }> {
     const user = await this.usersService.getUserByEmail(email);
 
     if (!user) {
@@ -39,10 +43,9 @@ export class PasswordResetService implements IPasswordResetService {
     }
 
     const code = await this.otpService.create(user.id, 'PASSWORD_RESET');
-
+    await this.mailService.sendOtpEmail(email, code);
     return {
       message: 'OTP sent successfully',
-      code, // demo only
     };
   }
 

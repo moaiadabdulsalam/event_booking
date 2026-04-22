@@ -10,6 +10,7 @@ import { RefreshTokenService } from './services/refresh-token.service';
 import { OtpService } from './services/otp.service';
 import { PasswordResetService } from './services/password-reset.service';
 import { OtpRepository } from './repositories/otp.repository';
+import { MainService } from './services/main.service';
 
 
 @Module({
@@ -43,9 +44,14 @@ import { OtpRepository } from './repositories/otp.repository';
       provide: PASSWORD_RESET_SERVICE,
       useClass: PasswordResetService,
     },
+    {
+      provide: 'MAIL_SERVICE',
+      useClass: MainService,
+    },
     RefreshTokenService,
     OtpService,
-    PasswordResetService
+    PasswordResetService,
+    MainService
   ],
 })
 export class AuthModule {}

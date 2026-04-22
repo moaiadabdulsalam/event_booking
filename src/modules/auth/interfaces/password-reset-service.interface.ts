@@ -1,5 +1,5 @@
 export interface IPasswordResetService {
-  requestReset(email: string): Promise<{ message: string; code: string }>;
+  requestReset(email: string): Promise<{ message: string; }>;
   resetPassword(
     email: string,
     code: string,
