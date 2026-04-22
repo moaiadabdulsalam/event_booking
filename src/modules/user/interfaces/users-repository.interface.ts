@@ -1,4 +1,4 @@
-import { Role, User } from '../../../../generated/prisma/client';
+import { Role, User } from '@prisma/client';
 
 export interface CreateUserRepositoryInput {
   fullName: string;
@@ -12,6 +12,7 @@ export interface UpdateUserRepositoryInput {
   fullName?: string;
   email?: string;
   passwordHash?: string;
+  hashedRefreshToken?: string | null;
   role?: Role;
   isActive?: boolean;
 }

@@ -3,12 +3,14 @@ import { registerDto } from '../dto/register.dto';
 import { UserService } from '../../user/services/user.service';
 import {
   PASSWORD_SERVICE,
+  REFRESH_TOKEN_SERVICE,
   TOKEN_SERVICE,
 } from '../../../common/constants/injection-tokens';
 import type { IPasswordService } from '../interfaces/password-service.interface';
 import { Role } from '../../../../generated/prisma/enums';
 import type { ITokenService } from '../interfaces/token-service.interface';
 import { LoginDto } from '../dto/login.dto';
+import type { IRefreshTokenService } from '../interfaces/refresh-token-service.interface';
 
 @Injectable()
 export class AuthService {
@@ -20,6 +22,9 @@ export class AuthService {
 
     @Inject(TOKEN_SERVICE)
     private readonly tokenService: ITokenService,
+
+     @Inject(REFRESH_TOKEN_SERVICE)
+    private readonly refreshTokenService: IRefreshTokenService,
   ) {}
 
   async register(data: registerDto) {
@@ -37,14 +42,17 @@ export class AuthService {
       isActive: true,
     });
 
-    const payload = { sub: user.id, email: user.email, role: user.role };
-    const accessToken = await this.tokenService.generateAccessToken(payload);
-    const refreshToken = await this.tokenService.generateRefreshToken(payload);
+    const tokens = await this.refreshTokenService.issueTokens({
+      id: user.id,
+      email: user.email,
+      role: user.role,
+    });
+
     return {
       user,
-      accessToken,
-      refreshToken,
+      ...tokens,
     };
+   
   }
 
   async login(data: LoginDto) {
@@ -61,13 +69,27 @@ export class AuthService {
       throw new BadRequestException('Invalid password');
     }
 
-    const payload = { sub: user.id, email: user.email, role: user.role };
-    const accessToken = await this.tokenService.generateAccessToken(payload);
-    const refreshToken = await this.tokenService.generateRefreshToken(payload);
+   const tokens = await this.refreshTokenService.issueTokens({
+      id: user.id,
+      email: user.email,
+      role: user.role,
+    });
+
     return {
       user,
-      accessToken,
-      refreshToken,
+      ...tokens,
     };
   }
+  async refresh(refreshToken: string) {
+    return this.refreshTokenService.refresh(refreshToken);
+  }
+
+  async logout(userId: string) {
+    await this.refreshTokenService.revoke(userId);
+
+    return {
+      message: 'Logged out successfully',
+    };
+  }
+
 }

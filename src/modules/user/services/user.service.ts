@@ -52,7 +52,7 @@ export class UserService {
   }
 
   async getUserById(id: string) {
-    await this.ensureUserExists(id);
+    return await this.ensureUserExists(id);
   }
 
   async getUserByEmail(email: string) {
