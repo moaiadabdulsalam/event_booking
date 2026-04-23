@@ -16,6 +16,8 @@ import { SeatManagementService } from './seat-management.service';
 import type { IEventRepository } from '../interfaces/event-repository.interface';
 import { QueryEventsDto } from '../dto/query-event.dto';
 import type { IUnitOfWork } from '../interfaces/unit-of-work.interface';
+import { AppLogger } from '../../../common/logger/app-logger.service';
+import { LogService } from '../../logs/services/log.service';
 
 @Injectable()
 export class EventService {
@@ -26,8 +28,12 @@ export class EventService {
     @Inject(UNIT_OF_WORK)
     private readonly unitOfWork: IUnitOfWork,
 
-    
     private readonly seatManagementService: SeatManagementService,
+
+    private readonly logService: AppLogger,
+
+    private readonly lgCreated : LogService
+    
   ) {}
 
   private async ensureEventExists(id: string) {
@@ -53,24 +59,32 @@ export class EventService {
     this.validateDates(startsAt, endsAt);
 
     return this.unitOfWork.execute(async (tx) => {
-      const event = await this.eventsRepository.createEvent({
-        title: dto.title,
-        description: dto.description,
-        location: dto.location,
-        startsAt,
-        endsAt,
-        totalSeats: dto.totalSeats,
-        availableSeats: dto.totalSeats,
-        price: Prisma.Decimal(dto.price) ,
-        createdById,
-      } , tx );
+      const event = await this.eventsRepository.createEvent(
+        {
+          title: dto.title,
+          description: dto.description,
+          location: dto.location,
+          startsAt,
+          endsAt,
+          totalSeats: dto.totalSeats,
+          availableSeats: dto.totalSeats,
+          price: Prisma.Decimal(dto.price),
+          createdById,
+        },
+        tx,
+      );
 
       await this.seatManagementService.generateSeatsForEvent(
         event.id,
         dto.totalSeats,
-        tx
+        tx,
       );
 
+      this.logService.log(
+        `New event created: ${event.title} (ID: ${event.id}) by user: ${createdById}`,
+      );
+
+      await this.lgCreated.createLog('Event Created', { eventId: event.id, createdById }, createdById);
       return event;
     });
   }
@@ -95,11 +109,15 @@ export class EventService {
       dto.totalSeats &&
       dto.totalSeats < event.totalSeats - event.availableSeats
     ) {
+      this.logService.warn(
+        `Failed to update event: ${event.title} (ID: ${event.id}). Reason: Total seats cannot be less than already booked seats.`,
+      );
       throw new BadRequestException(
         'Total seats cannot be less than already booked seats',
       );
     }
-
+    this.logService.log(`Event updated: ${event.title} (ID: ${event.id})`);
+    await this.lgCreated.createLog('Event Updated', { eventId: event.id, updatedById: event.createdById }, event.createdById);
     return this.eventsRepository.updateEvent(id, {
       title: dto.title,
       description: dto.description,
@@ -112,13 +130,14 @@ export class EventService {
   }
 
   async deleteEvent(id: string) {
-    await this.ensureEventExists(id);
+    const event = await this.ensureEventExists(id);
+    this.logService.log(`Event deleted: ${event.title} (ID: ${event.id})`);
     return this.eventsRepository.deleteEvent(id);
   }
 
   async publishEvent(id: string) {
     await this.ensureEventExists(id);
-
+    this.logService.log(`Event published: (ID: ${id})`);
     return this.eventsRepository.updateEvent(id, {
       status: EventStatus.PUBLISHED,
     });
@@ -126,7 +145,7 @@ export class EventService {
 
   async closeEvent(id: string) {
     await this.ensureEventExists(id);
-
+    this.logService.log(`Event closed: (ID: ${id})`);
     return this.eventsRepository.updateEvent(id, {
       status: EventStatus.CLOSED,
     });
@@ -134,7 +153,7 @@ export class EventService {
 
   async cancelEvent(id: string) {
     await this.ensureEventExists(id);
-
+    this.logService.log(`Event cancelled: (ID: ${id})`);
     return this.eventsRepository.updateEvent(id, {
       status: EventStatus.CANCELLED,
     });

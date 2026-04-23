@@ -11,9 +11,11 @@ import { EventController } from './controllers/event.controller';
 import { EventRepository } from './repositories/event.repository';
 import { PrismaUnitOfWork } from '../../database/transcation/prisma-unit-of-work';
 import { AuthModule } from '../auth/auth.module';
+import { LogsModule } from '../logs/logs.module';
+import { AppLogger } from '../../common/logger/app-logger.service';
 
 @Module({
-  imports:[AuthModule],
+  imports:[AuthModule , LogsModule],
   providers: [
     EventService,
     SeatManagementService,
@@ -27,6 +29,7 @@ import { AuthModule } from '../auth/auth.module';
     },
     EventRepository,
     SeatManagementRepository,
+    AppLogger
   ],
   controllers: [EventController],
   exports: [

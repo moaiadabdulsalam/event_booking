@@ -7,6 +7,8 @@ import { AuthModule } from './modules/auth/auth.module';
 import { EventModule } from './modules/event/event.module';
 import { BookingModule } from './modules/booking/booking.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { AdminModule } from './modules/admin/admin.module';
+import { LogsModule } from './modules/logs/logs.module';
 
 @Module({
   imports: [
@@ -19,6 +21,8 @@ import { ScheduleModule } from '@nestjs/schedule';
     AuthModule,
     EventModule,
     BookingModule,
+    AdminModule,
+    LogsModule,
   ],
   providers: [PrismaService],
 })

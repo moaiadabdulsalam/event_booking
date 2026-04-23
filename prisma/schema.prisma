@@ -158,3 +158,11 @@ model Otp {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
+model Log {
+  id        String   @id @default(cuid())
+  action    String
+  userId    String?
+  metadata  Json?
+  traceId   String
+  createdAt DateTime @default(now())
+}

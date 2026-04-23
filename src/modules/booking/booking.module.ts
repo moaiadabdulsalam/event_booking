@@ -7,9 +7,11 @@ import { EventModule } from '../event/event.module';
 import { AuthModule } from '../auth/auth.module';
 import { UserModule } from '../user/user.module';
 import { BookingExpireService } from './jobs/booking-expire.service';
+import { LogsModule } from '../logs/logs.module';
+import { AppLogger } from '../../common/logger/app-logger.service';
 
 @Module({
-  imports: [EventModule, AuthModule, UserModule],
+  imports: [EventModule, AuthModule, UserModule ,LogsModule],
   controllers: [BookingController],
   providers: [
     BookingService,
@@ -18,7 +20,7 @@ import { BookingExpireService } from './jobs/booking-expire.service';
       useClass: BookingRepository,
     },
     BookingExpireService,
-
+    AppLogger
   ],
 })
 export class BookingModule {}

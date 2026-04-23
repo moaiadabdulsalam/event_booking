@@ -12,10 +12,12 @@ import { PasswordResetService } from './services/password-reset.service';
 import { OtpRepository } from './repositories/otp.repository';
 import { MainService } from './services/main.service';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
+import { LogsModule } from '../logs/logs.module';
+import { AppLogger } from '../../common/logger/app-logger.service';
 
 
 @Module({
-  imports:[JwtModule.register({}) , UserModule],
+  imports:[JwtModule.register({}) , UserModule, LogsModule],
   controllers: [AuthController],
   providers: [
     AuthService,
@@ -54,6 +56,7 @@ import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
     PasswordResetService,
     MainService,
     JwtAuthGuard,
+    AppLogger
   ],
   exports: [JwtModule , JwtAuthGuard],
 })

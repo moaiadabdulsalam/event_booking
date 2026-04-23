@@ -11,6 +11,8 @@ import { Role } from '../../../../generated/prisma/enums';
 import type { ITokenService } from '../interfaces/token-service.interface';
 import { LoginDto } from '../dto/login.dto';
 import type { IRefreshTokenService } from '../interfaces/refresh-token-service.interface';
+import { LogService } from '../../logs/services/log.service';
+import { AppLogger } from '../../../common/logger/app-logger.service';
 
 @Injectable()
 export class AuthService {
@@ -25,11 +27,14 @@ export class AuthService {
 
      @Inject(REFRESH_TOKEN_SERVICE)
     private readonly refreshTokenService: IRefreshTokenService,
+
+    private readonly logService : AppLogger
   ) {}
 
   async register(data: registerDto) {
     const existingUser = await this.userService.getUserByEmail(data.email);
     if (existingUser) {
+      this.logService.warn(`Registration attempt with existing email: ${data.email}`);
       throw new BadRequestException('Email already in use');
     }
 
@@ -47,7 +52,7 @@ export class AuthService {
       email: user.email,
       role: user.role,
     });
-
+    this.logService.log(`New user registered: ${user.email} (ID: ${user.id})`);
     return {
       user,
       ...tokens,
@@ -58,7 +63,8 @@ export class AuthService {
   async login(data: LoginDto) {
     const user = await this.userService.getUserByEmail(data.email);
     if (!user) {
-      throw new BadRequestException('Email already in use');
+      this.logService.warn(`Login attempt with non-existing email: ${data.email}`);
+      throw new BadRequestException('Email not found');
     }
 
     const isValidPassword = await this.passwordService.compare(
@@ -66,6 +72,7 @@ export class AuthService {
       user.passwordHash,
     );
     if (!isValidPassword) {
+      this.logService.warn(`Invalid password attempt for email: ${data.email}`);
       throw new BadRequestException('Invalid password');
     }
 
@@ -74,6 +81,7 @@ export class AuthService {
       email: user.email,
       role: user.role,
     });
+    this.logService.log(`User logged in: ${user.email} (ID: ${user.id})`);
 
     return {
       user,
@@ -86,6 +94,7 @@ export class AuthService {
 
   async logout(userId: string) {
     await this.refreshTokenService.revoke(userId);
+    this.logService.log(`User logged out: ${userId}`);
 
     return {
       message: 'Logged out successfully',
