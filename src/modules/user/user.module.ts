@@ -10,6 +10,6 @@ import { USERS_REPOSITORY } from '../../common/constants/injection-tokens';
       useClass : UsersRepository
     },
   ],
-  exports: [UserService ,USERS_REPOSITORY],
+  exports: [UserService],
 })
 export class UserModule {}
